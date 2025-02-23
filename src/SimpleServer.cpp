@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <thread>
+#include <mutex>
 
 
 using namespace std;
@@ -54,9 +55,19 @@ int SimpleServer::StartServer(){
 
         cout << "Connection accepted! Processing request! Creating new thread... \n";
 
+        /*
+        
+        TWO CHOICES HERE
+        If client socket exists in the client map we want to wait for message and send to all other clients in the room
+            -> HandleConnectedClient
+        If not we want to execute the handshake
+            -> HandleClientHandshake
+        
+
         //ProcessClient(clientSock);
-        thread clientThread(&SimpleServer::ProcessClient, this, clientSock);
-        clientThread.detach();
+        //thread clientThread(&SimpleServer::ProcessClient, this, clientSock);
+        //clientThread.detach();
+        */
     }
 
     return 0;
@@ -74,8 +85,71 @@ int SimpleServer::SendData(int clientSock, const char* data){
 
 
 void SimpleServer::ProcessClient(int clientSock){
-// calls helper functions to process the clients request
- 
+// client is now connected to our server, we want to prompt for a chat room ID
+
+
+}
+
+
+int SimpleServer::ParseClientHandshake(int clientSock, char* raw_response, ClientData& clientData){
+    // null terminating the response
+
+    stringstream stream(raw_response);
+
+    // Fill the struct;
+    stream >> clientData.userName >> clientData.roomID;
+    clientData.socket = clientSock;
+
+    if (!(stream >> clientData.userName >> clientData.roomID)) { // Check if parsing both values succeeded
+        perror("Error parsing the request");
+    }  
+
+    return 0;
+}
+
+
+int SimpleServer::HandleInitialConnection(int clientSock){
+    // We execute the initial handshake and as client for a room ID
+    // if not executed within sertain time we should timeOut
+    // we should map clientSock to an room ID map
+    ClientData clientData;
+    const char* handShake = "Enter connection @<username>:<roomID>";
+    char* raw_response;
+    int roomID;
+
+
+    // Send data with request for room ID
+    if(server.socketSend(clientSock, handShake) < 0){
+        perror("Failed to send handShake to client");
+        return 1;
+    }
+
+    // Parse out room ID
+    if(server.socketReceive(clientSock, raw_response) < 0){
+        perror("Failed to recieve handShake from client");
+        return 1;
+    }
+
+    // null terminating the response
+    raw_response[sizeof(raw_response)] = '\n';
+
+    
+    if(ParseClientHandshake(clientSock, raw_response, clientData) == 1){
+        perror("Failed to parse client response");
+        return 1;
+    }
+
+
+    // add to Room Map
+    lock_guard<mutex> lock(clientMetadataMtx);
+    {
+        // add to map when we have aquired lock
+        rooms[clientData.roomID].push_back(clientData);
+        connected[clientData.socket].push_back(clientData);
+    }
+
+    // have threads send out message that CLIENT blah blah joined room
+    return 0;
 }
 
 

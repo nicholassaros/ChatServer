@@ -1,0 +1,2 @@
+Client should attempt to make connection
+Server should send message and prompt for a room ID
