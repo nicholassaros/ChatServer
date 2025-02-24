@@ -32,7 +32,7 @@ public:
 
     int SendData(int, const char*);
 
-    int HandleInitialConnection(int);
+    int HandleClientHandshake(int);
 
     void ProcessClient(int); 
 

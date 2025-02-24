@@ -108,7 +108,7 @@ int SimpleServer::ParseClientHandshake(int clientSock, char* raw_response, Clien
 }
 
 
-int SimpleServer::HandleInitialConnection(int clientSock){
+int SimpleServer::HandleClientHandshake(int clientSock){
     // We execute the initial handshake and as client for a room ID
     // if not executed within sertain time we should timeOut
     // we should map clientSock to an room ID map
