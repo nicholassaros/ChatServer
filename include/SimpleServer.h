@@ -18,7 +18,7 @@ class SimpleServer {
 private:
     ISocket& server;
     map<int,vector<ClientData>> rooms;
-    map<int,vector<ClientData>> connected;
+    map<int,ClientData> connected;
     mutex clientMetadataMtx;
     int serverSock;
     int MAX_CONNECTIONS;
@@ -33,6 +33,8 @@ public:
     int SendData(int, const char*);
 
     int HandleClientHandshake(int);
+
+    int HandleConnectedClient(int);
 
     void ProcessClient(int); 
 

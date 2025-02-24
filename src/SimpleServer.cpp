@@ -108,6 +108,42 @@ int SimpleServer::ParseClientHandshake(int clientSock, char* raw_response, Clien
 }
 
 
+int SimpleServer::HandleConnectedClient(int clientSock){
+    // Wait for incoming message of client
+
+    char* raw_message;
+    int roomId;
+    vector<ClientData> clientList;
+    ClientData clientData;
+
+    if(server.socketReceive(clientSock,raw_message) < 0){
+        perror("Failed to recieve message from client");
+    }
+
+
+    // lock as we are reading from concurrent DataStructure 
+    lock_guard<mutex> lock(clientMetadataMtx);
+    {
+        clientData = connected[clientSock];
+        clientList = rooms[clientData.roomID];
+    }
+
+    for(const auto& recipient:clientList){
+        // send out message to each member in the room
+        if(server.socketSend(recipient.socket, raw_message) < 0){
+            cout << "Message from " 
+                << clientData.userName 
+                << " failed to send to " 
+                << recipient.userName 
+                << endl; 
+            perror("Message not sent!");
+        }
+    }
+
+    return 0;
+}
+
+
 int SimpleServer::HandleClientHandshake(int clientSock){
     // We execute the initial handshake and as client for a room ID
     // if not executed within sertain time we should timeOut
@@ -145,7 +181,7 @@ int SimpleServer::HandleClientHandshake(int clientSock){
     {
         // add to map when we have aquired lock
         rooms[clientData.roomID].push_back(clientData);
-        connected[clientData.socket].push_back(clientData);
+        connected[clientData.socket] = clientData;
     }
 
     // have threads send out message that CLIENT blah blah joined room
