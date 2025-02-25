@@ -1,5 +1,6 @@
 #include "SimpleServer.h"
 #include "SocketServer.h"
+#include "ThreadPool.h"
 
 
 #include <iostream>
@@ -12,8 +13,8 @@
 using namespace std;
 
 
-SimpleServer::SimpleServer(ISocket& _server)
-    : server(_server){}
+SimpleServer::SimpleServer(ISocket& _server, ThreadPool& pool)
+    : server(_server), pool(pool){}
 
 
 int SimpleServer::SetupServer(){
@@ -55,15 +56,12 @@ int SimpleServer::StartServer(){
 
         cout << "Connection accepted! Processing request! Creating new thread... \n";
 
-        /*
-        
-        TWO CHOICES HERE
-        If client socket exists in the client map we want to wait for message and send to all other clients in the room
-            -> HandleConnectedClient
-        If not we want to execute the handshake
-            -> HandleClientHandshake
-        
 
+        pool.TaskQueuePush([&](int& clientSock){
+            this->ProcessClient(clientSock);
+        });
+        
+        /*
         //ProcessClient(clientSock);
         //thread clientThread(&SimpleServer::ProcessClient, this, clientSock);
         //clientThread.detach();
@@ -85,8 +83,13 @@ int SimpleServer::SendData(int clientSock, const char* data){
 
 
 void SimpleServer::ProcessClient(int clientSock){
-// client is now connected to our server, we want to prompt for a chat room ID
-
+    /*
+      TWO CHOICES HERE
+        If client socket exists in the client map we want to wait for message and send to all other clients in the room
+            -> HandleConnectedClient
+        If not we want to execute the handshake
+            -> HandleClientHandshake
+    */
 
 }
 

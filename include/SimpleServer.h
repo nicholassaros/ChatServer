@@ -2,6 +2,7 @@
 #define SIMPLESERVER_H
 
 #include "SocketServer.h"
+#include "ThreadPool.h"
 
 #include <map>
 #include <mutex>
@@ -17,6 +18,7 @@ struct ClientData {
 class SimpleServer {
 private:
     ISocket& server;
+    ThreadPool& pool;
     map<int,vector<ClientData>> rooms;
     map<int,ClientData> connected;
     mutex clientMetadataMtx;
@@ -24,7 +26,7 @@ private:
     int MAX_CONNECTIONS;
 
 public:
-    SimpleServer(ISocket& server);
+    SimpleServer(ISocket& server, ThreadPool& pool);
 
     int SetupServer();
 
