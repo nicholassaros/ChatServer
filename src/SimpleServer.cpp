@@ -56,16 +56,10 @@ int SimpleServer::StartServer(){
 
         cout << "Connection accepted! Processing request! Creating new thread... \n";
 
-
-        pool.TaskQueuePush([&](int& clientSock){
+        // lambda which calles the process client with the current clientSocket
+        pool.TaskQueuePush([&](){
             this->ProcessClient(clientSock);
         });
-        
-        /*
-        //ProcessClient(clientSock);
-        //thread clientThread(&SimpleServer::ProcessClient, this, clientSock);
-        //clientThread.detach();
-        */
     }
 
     return 0;
@@ -91,6 +85,21 @@ void SimpleServer::ProcessClient(int clientSock){
             -> HandleClientHandshake
     */
 
+    int clientExists = 1;
+
+    // get lock on clienMap to check if client exists
+    lock_guard<mutex> lock(clientMetadataMtx);
+    {
+        if(connected.find(clientSock) != connected.end()){
+            clientExists = 0;
+        }
+    }
+
+    if (clientExists == 0){
+        HandleConnectedClient(clientSock);
+    } else {
+        HandleClientHandshake(clientSock);
+    }
 }
 
 
